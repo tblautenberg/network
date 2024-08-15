@@ -3,33 +3,51 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 
 class Client
 {
     public static void main(String[] args) throws UnknownHostException, IOException 
     {
-        Socket connection = new Socket("127.0.0.1", 6010); // Server IP og portnummer
-            
-        System.out.println("[CLIENT]: Connection established");
 
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
+        Scanner scanner = new Scanner(System.in);
 
-        sendLine(writer, "Hello from the client!");
-        sendLine(writer, "I really hope this works :-)");
-        sendLine(writer, "");
+        System.out.println("Enter the IP address of the server: ");
+        String ip = scanner.nextLine();
+
+        System.out.println("Enter the port number of the server: ");
+        int port = scanner.nextInt();
+        
+        try(Socket connection = new Socket(ip,port))
+        {
+            System.out.println("[CLIENT]: Connection established");
+
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
+
+            sendLine(writer, "Hello from the client!");
+            sendLine(writer, "I really hope this works :-)");
+            sendLine(writer, "");
+
+        }
+
+        catch (Exception e) // Skriver en fejlbesked hvis der er en fejl
+        {
+            System.out.println("Wrong IP or port number. Server might also be offline? Errorcode from java: " + e);
+        }
 
     }
 
     // Metode så vi kan sende text til vores server
 
-    private static void sendLine( BufferedWriter writer, String line ) throws IOException
+    private static void sendLine( BufferedWriter writer, String line ) throws IOException, InterruptedException
     {
         System.out.println("[Client] sending line: " + line );
     
         writer.write(line); // Sender en string til vores bufferedWriter
         writer.newLine(); // Forcer et linjeskift så vores writer ved at linjen er færdig
         writer.flush(); // Flusher writeren, så vi ved at data sendes efter hver linje
+        Thread.sleep(1000); // Venter 1 sekund mellem hver linje
     
     }
 }
