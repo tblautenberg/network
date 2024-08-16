@@ -9,36 +9,46 @@ public class Server
         try 
         {
             ServerSocket server = new ServerSocket(6010);
+            System.out.println("Welcome to the UPPERSCASE SERVER!");
             System.out.println("[SERVER]: We are online!");
             System.err.println("[SERVER]: Waiting for a client to connect...");
 
+            Socket connection = server.accept();  // Afventer klienten tilslutter
 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            PrintWriter writer = new PrintWriter(connection.getOutputStream(), true); 
 
-            Socket connection = server.accept();  // Venter på at en klient forbinder til serveren
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream())); 
-
-            String line; // Deklarerer en string variabel, som skal bruges til at læse linjer fra klienten
+            String line; // Placeholder string
 
             try 
             {
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("[SERVER RECEIVED]: " + line.toUpperCase());
-                    if (line.equals("")) {
-                        System.out.println("<END>");
+                while ((line = reader.readLine()) != null) // Loop der køre så længe der er data fra klienten
+                {
+                    System.out.println("[SERVER RECEIVED FROM CLIENT]: " + line);
+                    
+                    // Konventere den modtagede linje til UPPERCASE
+                    String response = line.toUpperCase();
+
+                    // Sender den tilbage til klienten
+                    writer.println(response);
+
+                    if (line.equalsIgnoreCase("<END>"))  // Når <END> rammes, stopper loopet
+                    {
                         break;
                     }
                 }
             }
-             catch (IOException e) 
+            catch (IOException e) 
             {
-                System.out.println("[SERVER ERROR]: Connection reset. The client may have disconnected abruptly.");
+                System.out.println("[SERVER ERROR]: Server stopped working.");
             }
 
-            reader.close(); // Lukker reader
-            connection.close();  // Lukker connection
-            server.close(); // Lukker serveren
-            System.out.println("[SERVER OFFLINE!]");
+            reader.close();
+            writer.close();
+            connection.close();
+            server.close();
+
+            System.out.println("[SERVER MESSAGE]: <END> tag received from client - shutting off");
         } 
         catch (IOException e) 
         {
@@ -47,3 +57,16 @@ public class Server
         }
     }
 }
+
+
+/* NOTER TIL OPGAVEN
+
+Ved at bruge PrintWriter istedet for BufferedWriter undgår vi at anvende
+
+writer.write(response);
+writer.newLine();
+writer.flush(); 
+
+Ved at sætte autoFlush = true, sender den efter hvert println teksten til streamen - bruges også ved klient klassen.
+
+*/

@@ -1,16 +1,15 @@
-import java.io.BufferedWriter;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-
 
 class Client
 {
     public static void main(String[] args) throws UnknownHostException, IOException 
     {
-
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Enter the IP address of the server: ");
@@ -19,36 +18,49 @@ class Client
         System.out.println("Enter the port number of the server: ");
         int port = scanner.nextInt();
         
-        try(Socket connection = new Socket(ip,port))
+        scanner.nextLine(); 
+
+        try(Socket connection = new Socket(ip, port))
         {
             System.out.println("[CLIENT]: Connection established");
 
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
+            PrintWriter writer = new PrintWriter(connection.getOutputStream(), true);  // Anvender PrintWriter over bufferedWriter
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
-            sendLine(writer, "Hello from the client!");
-            sendLine(writer, "I really hope this works :-)");
-            sendLine(writer, "");
+            String message;
+            
+            while (true) // Køre loop til vi rammer <END> tag
+            {
+                System.out.println("**********************************************");
+                System.out.println("Enter a message to send to the server (type '<END>' to quit): ");
+                System.out.println("**********************************************");
+                message = scanner.nextLine();
 
+                communicateWithServer(writer, reader, message);
+
+                if (message.equalsIgnoreCase("<END>")) 
+                {
+                    System.out.println("<END> tag sent - shutting client off");
+                    break;
+                }
+            }
         }
-
-        catch (Exception e) // Skriver en fejlbesked hvis der er en fejl
+        catch (Exception e) 
         {
-            System.out.println("Wrong IP or port number. Server might also be offline? Errorcode from java: " + e);
+            System.out.println("Wrong IP or port number. Server might also be offline? Error code from Java: " + e);
         }
-
     }
 
-    // Metode så vi kan sende text til vores server
-
-    private static void sendLine( BufferedWriter writer, String line ) throws IOException, InterruptedException
+    // Metode til at kommunikere med serveren
+    private static void communicateWithServer(PrintWriter writer, BufferedReader reader, String line) throws IOException
     {
-        System.out.println("[Client] sending line: " + line );
-    
-        writer.write(line); // Sender en string til vores bufferedWriter
-        writer.newLine(); // Forcer et linjeskift så vores writer ved at linjen er færdig
-        writer.flush(); // Flusher writeren, så vi ved at data sendes efter hver linje
-        Thread.sleep(1000); // Venter 1 sekund mellem hver linje
-    
+        System.out.println("[CLIENT]: Sending line: " + line);
+
+        writer.println(line);
+
+        // Læser dataen der kommer retur fra serveren og skriver den ud
+
+        String response = reader.readLine();
+        System.out.println("[SERVER RESPONSE]: " + response);
     }
 }
-
